@@ -1,21 +1,12 @@
 import type { CalculationResult } from '../utils/calculations';
 import { formatPLN } from '../utils/formatters';
+import { Panel } from './ui/Panel';
 
 interface Props {
   result: CalculationResult;
 }
 
-function Row({
-  label,
-  withWibor,
-  withoutWibor,
-  highlight,
-}: {
-  label: string;
-  withWibor: number;
-  withoutWibor: number;
-  highlight?: boolean;
-}) {
+function Row({ label, withWibor, withoutWibor, highlight }: { label: string; withWibor: number; withoutWibor: number; highlight?: boolean }) {
   const diff = withWibor - withoutWibor;
   return (
     <tr className={highlight ? 'bg-green-50 font-bold' : 'hover:bg-gray-50'}>
@@ -29,21 +20,38 @@ function Row({
   );
 }
 
+function SectionHeader({ children }: { children: string }) {
+  return (
+    <tr className="bg-gray-50/50">
+      <td colSpan={4} className="px-4 py-2 text-xs font-bold text-gray-500 uppercase tracking-wider">{children}</td>
+    </tr>
+  );
+}
+
 export default function ComparisonView({ result }: Props) {
-  const totalWithWibor = result.pastTotalPaid + result.futureTotalToPay;
-  const totalWithoutWibor = result.pastTotalPaidNoWibor + result.futureTotalNoWibor;
+  const r = result;
+  const rows: { section: string; items: { label: string; w: number; nw: number; hl?: boolean }[] }[] = [
+    { section: 'Dotychczasowe spłaty', items: [
+      { label: 'Wpłacono łącznie', w: r.pastTotalPaid, nw: r.pastTotalPaidNoWibor },
+      { label: 'Zapłacony kapitał', w: r.pastPrincipalPaid, nw: r.pastPrincipalNoWibor },
+      { label: 'Zapłacone odsetki', w: r.pastInterestTotal, nw: r.pastInterestNoWibor },
+    ]},
+    { section: 'Przyszłe spłaty', items: [
+      { label: 'Do spłaty łącznie', w: r.futureTotalToPay, nw: r.futureTotalNoWibor },
+      { label: 'Przyszłe odsetki', w: r.futureInterestTotal, nw: r.futureInterestNoWibor },
+      { label: 'Obecna rata miesięczna', w: r.currentInstallment, nw: r.installmentNoWibor },
+    ]},
+    { section: 'Podsumowanie', items: [
+      { label: 'Całkowity koszt kredytu (kapitał + odsetki)', w: r.pastTotalPaid + r.futureTotalToPay, nw: r.pastTotalPaidNoWibor + r.futureTotalNoWibor, hl: true },
+    ]},
+  ];
 
   return (
-    <div className="bg-white rounded-xl shadow-lg overflow-hidden">
+    <Panel className="overflow-hidden">
       <div className="p-4 border-b">
-        <h3 className="text-lg font-bold text-gray-800">
-          Porównanie: z WIBOR vs bez WIBOR
-        </h3>
-        <p className="text-sm text-gray-500 mt-1">
-          Scenariusz eliminacji wskaźnika WIBOR - kredyt oprocentowany wyłącznie marżą banku
-        </p>
+        <h3 className="text-lg font-bold text-gray-800">Porównanie: z WIBOR vs bez WIBOR</h3>
+        <p className="text-sm text-gray-500 mt-1">Scenariusz eliminacji wskaźnika WIBOR - kredyt oprocentowany wyłącznie marżą banku</p>
       </div>
-
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead className="bg-gray-50">
@@ -55,60 +63,15 @@ export default function ComparisonView({ result }: Props) {
             </tr>
           </thead>
           <tbody className="divide-y">
-            <tr className="bg-gray-50/50">
-              <td colSpan={4} className="px-4 py-2 text-xs font-bold text-gray-500 uppercase tracking-wider">
-                Dotychczasowe spłaty
-              </td>
-            </tr>
-            <Row
-              label="Wpłacono łącznie"
-              withWibor={result.pastTotalPaid}
-              withoutWibor={result.pastTotalPaidNoWibor}
-            />
-            <Row
-              label="Zapłacony kapitał"
-              withWibor={result.pastPrincipalPaid}
-              withoutWibor={result.pastPrincipalNoWibor}
-            />
-            <Row
-              label="Zapłacone odsetki"
-              withWibor={result.pastInterestTotal}
-              withoutWibor={result.pastInterestNoWibor}
-            />
-            <tr className="bg-gray-50/50">
-              <td colSpan={4} className="px-4 py-2 text-xs font-bold text-gray-500 uppercase tracking-wider">
-                Przyszłe spłaty
-              </td>
-            </tr>
-            <Row
-              label="Do spłaty łącznie"
-              withWibor={result.futureTotalToPay}
-              withoutWibor={result.futureTotalNoWibor}
-            />
-            <Row
-              label="Przyszłe odsetki"
-              withWibor={result.futureInterestTotal}
-              withoutWibor={result.futureInterestNoWibor}
-            />
-            <Row
-              label="Obecna rata miesięczna"
-              withWibor={result.currentInstallment}
-              withoutWibor={result.installmentNoWibor}
-            />
-            <tr className="bg-gray-50/50">
-              <td colSpan={4} className="px-4 py-2 text-xs font-bold text-gray-500 uppercase tracking-wider">
-                Podsumowanie
-              </td>
-            </tr>
-            <Row
-              label="Całkowity koszt kredytu (kapitał + odsetki)"
-              withWibor={totalWithWibor}
-              withoutWibor={totalWithoutWibor}
-              highlight
-            />
+            {rows.map(({ section, items }) => [
+              <SectionHeader key={section}>{section}</SectionHeader>,
+              ...items.map(({ label, w, nw, hl }) => (
+                <Row key={label} label={label} withWibor={w} withoutWibor={nw} highlight={hl} />
+              )),
+            ])}
           </tbody>
         </table>
       </div>
-    </div>
+    </Panel>
   );
 }

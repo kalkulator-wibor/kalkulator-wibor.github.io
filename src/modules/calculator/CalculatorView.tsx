@@ -13,14 +13,14 @@ function WiborSourceBadge() {
 
   return (
     <button onClick={() => openSheetModule('wiborData')}
-      className="mt-4 w-full text-left cursor-pointer group">
-      <div className="px-1 py-3 border-t border-base-300">
+      className="mt-3 w-full text-left cursor-pointer group card bg-base-100 shadow-sm hover:shadow-md transition-shadow">
+      <div className="card-body px-4 py-3">
         <div className="flex items-baseline justify-between">
           <p className="label-caps !opacity-30 group-hover:!opacity-60 transition-opacity">Dane WIBOR</p>
           <p className="text-[0.6875rem] opacity-30 group-hover:opacity-60 transition-opacity tabular-nums">{wiborData.length} wpisów · {range}</p>
         </div>
         {isDefault && (
-          <p className="text-[0.75rem] opacity-40 mt-1.5">
+          <p className="text-[0.75rem] opacity-40 mt-1">
             Wbudowane (przybliżone) · prognozy od {WIBOR_LAST_ACTUAL.replace('-', '/')} · <span className="underline group-hover:opacity-80">importuj dokładne</span>
           </p>
         )}

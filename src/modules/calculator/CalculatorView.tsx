@@ -53,39 +53,56 @@ export default function CalculatorView() {
             <activeTabModule.Component />
           </div>
         ) : (
-          <div className="space-y-4">
-            <div className="card bg-base-100 shadow-xl">
-              <div className="card-body py-8">
-                <h2 className="text-2xl font-bold">Oblicz ile przepłacasz na kredycie z WIBOR</h2>
-                <ul className="mt-4 space-y-3 text-base">
-                  <li className="flex gap-3 items-start"><span className="text-success text-lg">✓</span> Porównaj ratę z WIBOR i bez WIBOR</li>
-                  <li className="flex gap-3 items-start"><span className="text-success text-lg">✓</span> Oblicz kwotę roszczenia do pozwu bankowego</li>
-                  <li className="flex gap-3 items-start"><span className="text-success text-lg">✓</span> Zobacz ile nadpłaciłeś od początku kredytu</li>
-                </ul>
-                <p className="mt-4 text-sm opacity-60">Wypełnij formularz aby zobaczyć wynik</p>
+          <div className="flex flex-col">
+            {/* Hero — dominant element, golden ratio spacing */}
+            <div className="pt-8 pb-10 px-2">
+              <h2 className="text-3xl lg:text-4xl font-extrabold leading-tight tracking-tight">
+                Oblicz ile przepłacasz<br />na kredycie z&nbsp;WIBOR
+              </h2>
+              <div className="mt-6 flex flex-col gap-2.5 text-base opacity-80">
+                <p>Porównaj ratę z WIBOR i bez WIBOR</p>
+                <p>Oblicz kwotę roszczenia do pozwu</p>
+                <p>Zobacz ile nadpłaciłeś od początku kredytu</p>
               </div>
+              <p className="mt-10 text-xs tracking-widest uppercase opacity-40">Wypełnij formularz aby zobaczyć wynik</p>
             </div>
 
-            <div className="card bg-base-100 shadow-xl">
-              <div className="card-body py-6">
-                <h3 className="font-bold text-lg">Wyrok TSUE C-471/24 z 12.02.2026</h3>
-                <p className="text-sm opacity-80 mt-1">Trybunał potwierdził — klauzule WIBOR + marża mogą być badane pod kątem nieuczciwości. Banki miały obowiązek przedstawić symulację skrajnego wzrostu stóp. Większość tego nie zrobiła.</p>
-                <div className="flex flex-wrap gap-2 mt-3">
-                  <span className="badge badge-outline">odwiborowanie</span>
-                  <span className="badge badge-outline">pozew o WIBOR</span>
-                  <span className="badge badge-outline">abuzywność klauzuli</span>
+            {/* Divider — thin, Swiss-style */}
+            <div className="border-t border-base-300 mx-2" />
+
+            {/* TSUE — secondary block, restrained */}
+            <div className="py-8 px-2">
+              <p className="text-xs tracking-widest uppercase opacity-40 mb-3">Wyrok TSUE</p>
+              <p className="text-lg font-semibold leading-snug">
+                C-471/24 z 12.02.2026 — klauzule WIBOR&nbsp;+&nbsp;marża mogą być nieuczciwe
+              </p>
+              <p className="mt-3 text-sm opacity-60 leading-relaxed max-w-lg">
+                Banki miały obowiązek przedstawić symulację skrajnego wzrostu stóp. Większość tego nie zrobiła — to otwiera drogę do pozwu.
+              </p>
+            </div>
+
+            {/* Divider */}
+            <div className="border-t border-base-300 mx-2" />
+
+            {/* Benefits — compact grid, Fibonacci scale */}
+            <div className="py-8 px-2">
+              <p className="text-xs tracking-widest uppercase opacity-40 mb-5">Co możesz zyskać</p>
+              <div className="grid grid-cols-2 gap-x-8 gap-y-5">
+                <div>
+                  <p className="text-2xl font-bold">30–50%</p>
+                  <p className="text-sm opacity-60 mt-1">niższa rata kredytu</p>
                 </div>
-              </div>
-            </div>
-
-            <div className="card bg-base-100 shadow-xl">
-              <div className="card-body py-6">
-                <h3 className="font-bold text-lg">Co możesz zyskać?</h3>
-                <div className="grid grid-cols-2 gap-3 mt-2 text-sm">
-                  <div className="flex gap-2 items-start"><span className="text-primary font-bold">↓</span> Rata niższa nawet o 30–50%</div>
-                  <div className="flex gap-2 items-start"><span className="text-primary font-bold">↻</span> Zwrot nadpłaconych odsetek</div>
-                  <div className="flex gap-2 items-start"><span className="text-primary font-bold">↓</span> Niższe saldo zadłużenia</div>
-                  <div className="flex gap-2 items-start"><span className="text-primary font-bold">✓</span> Przewidywalna rata na przyszłość</div>
+                <div>
+                  <p className="text-2xl font-bold">Zwrot</p>
+                  <p className="text-sm opacity-60 mt-1">nadpłaconych odsetek</p>
+                </div>
+                <div>
+                  <p className="text-2xl font-bold">Niższe</p>
+                  <p className="text-sm opacity-60 mt-1">saldo zadłużenia</p>
+                </div>
+                <div>
+                  <p className="text-2xl font-bold">Stała rata</p>
+                  <p className="text-sm opacity-60 mt-1">przewidywalne koszty</p>
                 </div>
               </div>
             </div>

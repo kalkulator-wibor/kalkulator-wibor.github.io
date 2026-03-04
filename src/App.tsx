@@ -97,24 +97,38 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-base-200 flex flex-col">
-      <div className="navbar bg-neutral text-neutral-content">
-        <div className="navbar-start">
-          <div>
-            <h1 className="text-xl font-bold">Kalkulator WIBOR — oblicz roszczenie do pozwu</h1>
-            <p className="text-sm opacity-60">Sprawdź ile przepłacasz na kredycie i przygotuj się do pozwu bankowego</p>
+      <header className="bg-neutral text-neutral-content">
+        <div className="max-w-7xl mx-auto px-6 py-5 flex items-center justify-between">
+          <div className="flex items-baseline gap-3">
+            <h1 className="text-lg font-bold tracking-tight">Kalkulator WIBOR</h1>
+            <span className="hidden sm:inline text-xs tracking-widest uppercase opacity-40">Roszczenie do pozwu</span>
           </div>
-        </div>
-        <div className="navbar-end">
           <HeaderIconBar />
         </div>
-      </div>
+      </header>
 
       <main className="max-w-7xl mx-auto px-4 py-6 flex-1 w-full">
         <ErrorBoundary><AppShell /></ErrorBoundary>
       </main>
 
-      <footer className="footer footer-center bg-neutral text-neutral-content p-4 mt-auto">
-        <p className="text-xs opacity-60">Kalkulator ma charakter szacunkowy/poglądowy. Wyniki mogą się różnić od rzeczywistych kwot ze względu na zaokrąglenia, dokładne daty fixingów WIBOR i indywidualne warunki umowy.</p>
+      <footer className="bg-neutral text-neutral-content mt-auto">
+        <div className="max-w-7xl mx-auto px-6 py-8">
+          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-end gap-6">
+            <div>
+              <p className="text-xs tracking-widest uppercase opacity-40 mb-2">Kalkulator WIBOR</p>
+              <p className="text-sm opacity-60 max-w-md leading-relaxed">
+                Narzędzie do szacowania roszczeń z tytułu odwiborowania kredytu hipotecznego. Wyniki mają charakter poglądowy i nie stanowią porady prawnej.
+              </p>
+            </div>
+            <div className="text-xs opacity-30 sm:text-right shrink-0">
+              <p>kalkulator-wibor-pozew.pl</p>
+              <p className="mt-1">Obliczenia wykonywane lokalnie w przeglądarce</p>
+            </div>
+          </div>
+          <div className="border-t border-neutral-content/10 mt-6 pt-4">
+            <p className="text-xs opacity-20">Wyniki mogą się różnić od rzeczywistych kwot ze względu na zaokrąglenia, daty fixingów WIBOR i indywidualne warunki umowy.</p>
+          </div>
+        </div>
       </footer>
 
       <SheetModuleRenderer />

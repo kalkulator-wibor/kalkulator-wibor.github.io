@@ -3,7 +3,7 @@ import { create } from 'zustand';
 import { calculateLoan } from '../utils/calculations';
 import type { CalculationResult, LoanInput, WiborEntry } from '../utils/calculations';
 import { getDefaultWiborEntries } from '../data/defaults';
-import type { Case, WiborDataset } from './types';
+import type { Case, WiborDataset, LawsuitData } from './types';
 import { toDateString } from '../utils/formatters';
 import { toLoanInput, toStoredInput } from './serialization';
 import * as caseStore from './caseStore';
@@ -40,7 +40,8 @@ interface CaseStore {
 
   // Actions
   init: () => Promise<void>;
-  createCase: (name: string) => Promise<void>;
+  saveCurrentAsCase: (name: string) => Promise<void>;
+  newCase: () => void;
   loadCase: (id: string) => Promise<void>;
   deleteCase: (id: string) => Promise<void>;
   renameCase: (id: string, name: string) => void;
@@ -50,6 +51,9 @@ interface CaseStore {
   setEnabledAppModules: (ids: string[]) => void;
   openSheetModule: (id: string) => void;
   closeSheet: () => void;
+  updateLawsuit: (patch: Partial<LawsuitData>) => void;
+  activeTemplateId: string | null;
+  applyTemplate: (id: string) => void;
 }
 
 async function doLoadCase(c: Case, datasets?: WiborDataset[]) {
@@ -57,6 +61,7 @@ async function doLoadCase(c: Case, datasets?: WiborDataset[]) {
     activeCaseId: c.id,
     activeInput: toLoanInput(c.input),
     activeTab: 'summary',
+    activeTemplateId: c.templateId ?? null,
   };
 
   if (c.wiborDatasetId) {
@@ -105,11 +110,20 @@ export const useCases = create<CaseStore>((set, get) => ({
     set({ ready: true });
   },
 
-  createCase: async (name) => {
+  saveCurrentAsCase: async (name) => {
+    const { activeInput, wiborDatasetId, activeTemplateId } = get();
     const c = caseStore.createNewCase(name);
+    if (activeInput) {
+      c.input = toStoredInput(activeInput);
+    }
+    c.wiborDatasetId = wiborDatasetId;
+    c.templateId = activeTemplateId;
     await caseStore.saveCase(c);
-    set(s => ({ cases: [c, ...s.cases] }));
-    await doLoadCase(c);
+    set(s => ({ cases: [c, ...s.cases], activeCaseId: c.id }));
+  },
+
+  newCase: () => {
+    set({ activeCaseId: null, activeInput: null, activeTemplateId: null });
   },
 
   loadCase: async (id) => {
@@ -122,7 +136,7 @@ export const useCases = create<CaseStore>((set, get) => ({
     const { activeCaseId } = get();
     set(s => ({
       cases: s.cases.filter(c => c.id !== id),
-      ...(activeCaseId === id ? { activeCaseId: null, activeInput: null } : {}),
+      ...(activeCaseId === id ? { activeCaseId: null, activeInput: null, activeTemplateId: null, wiborData: getDefaultWiborEntries(), wiborDatasetId: null } : {}),
     }));
   },
 
@@ -171,8 +185,24 @@ export const useCases = create<CaseStore>((set, get) => ({
     set({ enabledAppModules: ids });
     try { localStorage.setItem('enabledAppModules', JSON.stringify(ids)); } catch {}
   },
+  updateLawsuit: (patch) => {
+    const { activeCaseId, cases } = get();
+    if (!activeCaseId) return;
+    const c = cases.find(c => c.id === activeCaseId);
+    if (!c) return;
+    const lawsuit = { ...c.lawsuit, ...patch };
+    updateCaseAndSave(activeCaseId, { lawsuit, updatedAt: new Date().toISOString() });
+  },
   openSheetModule: (id) => set({ openSheet: id }),
   closeSheet: () => set({ openSheet: null }),
+  activeTemplateId: null,
+  applyTemplate: (id) => {
+    set({ activeTemplateId: id });
+    const { activeCaseId } = get();
+    if (activeCaseId) {
+      updateCaseAndSave(activeCaseId, { templateId: id, updatedAt: new Date().toISOString() });
+    }
+  },
 }));
 
 // Derived selectors
@@ -191,4 +221,42 @@ export function useInput(): LoanInput | null {
 
 export function useWiborSource(): 'default' | 'custom' {
   return useCases(s => s.wiborDatasetId ? 'custom' : 'default');
+}
+
+export function useActiveCase(): Case | null {
+  const cases = useCases(s => s.cases);
+  const id = useCases(s => s.activeCaseId);
+  return cases.find(c => c.id === id) ?? null;
+}
+
+export interface LawsuitSummary {
+  wps: number;
+  courtFee: number;
+  statutoryInterest: number;
+  statutoryDays: number;
+  statutoryRate: number;
+}
+
+const STATUTORY_RATE = 11.25; // stopa ustawowa za opóźnienie = NBP ref (5.75%) + 5.5pp
+
+export function useLawsuitSummary(): LawsuitSummary | null {
+  const result = useResult();
+  const activeCase = useActiveCase();
+  return useMemo(() => {
+    if (!result || !activeCase) return null;
+
+    const wps = result.overpaidInterest;
+    const courtFee = Math.max(30, Math.min(Math.ceil(wps * 0.05), 200_000));
+
+    let statutoryInterest = 0;
+    let statutoryDays = 0;
+    if (activeCase.lawsuit.demandDate) {
+      const demandMs = new Date(activeCase.lawsuit.demandDate).getTime();
+      const nowMs = new Date().setHours(0, 0, 0, 0);
+      statutoryDays = Math.max(0, Math.round((nowMs - demandMs) / (24 * 60 * 60 * 1000)));
+      statutoryInterest = wps * (STATUTORY_RATE / 100) * statutoryDays / 365;
+    }
+
+    return { wps, courtFee, statutoryInterest, statutoryDays, statutoryRate: STATUTORY_RATE };
+  }, [result, activeCase]);
 }

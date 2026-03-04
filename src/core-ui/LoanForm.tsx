@@ -1,19 +1,12 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import type { LoanInput } from '../utils/calculations';
 import { toDateString } from '../utils/formatters';
-import { LOAN_TEMPLATES } from '../data/loanTemplates';
-import type { LoanTemplate } from '../data/loanTemplates';
+import { LOAN_TEMPLATES, getBank } from '../data/loanTemplates';
 import { useCases, useInput } from '../core/CaseContext';
 
-const bankGroups = LOAN_TEMPLATES.reduce<Record<string, LoanTemplate[]>>((acc, tpl) => {
-  (acc[tpl.bank] ??= []).push(tpl);
-  return acc;
-}, {});
-
 export default function LoanForm() {
-  const { updateInput, setActiveTab } = useCases();
+  const { updateInput, setActiveTab, openSheetModule, activeTemplateId } = useCases();
   const savedInput = useInput();
-  const [selectedTemplate, setSelectedTemplate] = useState('');
   const [loanAmount, setLoanAmount] = useState(savedInput ? String(savedInput.loanAmount) : '200000');
   const [margin, setMargin] = useState(savedInput ? savedInput.margin.toFixed(2) : '2.09');
   const [loanPeriod, setLoanPeriod] = useState(savedInput ? String(savedInput.loanPeriodMonths) : '300');
@@ -22,13 +15,18 @@ export default function LoanForm() {
   const [bridgeEndDate, setBridgeEndDate] = useState(savedInput?.bridgeEndDate ? toDateString(savedInput.bridgeEndDate) : '');
   const [showBridge, setShowBridge] = useState(savedInput ? savedInput.bridgeMargin > 0 : false);
   const [paymentDay, setPaymentDay] = useState(savedInput ? String(savedInput.paymentDay) : '30');
-  const [templateInfo, setTemplateInfo] = useState<LoanTemplate | null>(null);
 
-  const applyTemplate = (templateId: string) => {
-    setSelectedTemplate(templateId);
-    const tpl = LOAN_TEMPLATES.find(t => t.id === templateId);
-    if (!tpl) { setTemplateInfo(null); return; }
-    setTemplateInfo(tpl);
+  // Track previous templateId to detect external changes (sheet selection)
+  const prevTemplateId = useRef(activeTemplateId);
+
+  const templateInfo = activeTemplateId ? LOAN_TEMPLATES.find(t => t.id === activeTemplateId) ?? null : null;
+  const bank = templateInfo ? getBank(templateInfo.bankId) : null;
+
+  useEffect(() => {
+    if (activeTemplateId === prevTemplateId.current) return;
+    prevTemplateId.current = activeTemplateId;
+    const tpl = activeTemplateId ? LOAN_TEMPLATES.find(t => t.id === activeTemplateId) : null;
+    if (!tpl) return;
     setLoanAmount(tpl.loanAmount.toString());
     setMargin(tpl.margin.toFixed(2));
     setLoanPeriod(tpl.loanPeriodMonths.toString());
@@ -42,7 +40,7 @@ export default function LoanForm() {
       setBridgeMargin('0');
     }
     setStartDate('');
-  };
+  }, [activeTemplateId]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -64,24 +62,16 @@ export default function LoanForm() {
       <div className="card-body gap-4">
         <p className="label-caps pb-1">Dane z umowy kredytu</p>
 
-        <fieldset className="fieldset">
-          <legend className="fieldset-legend">Szablon umowy</legend>
-          <select value={selectedTemplate} onChange={e => applyTemplate(e.target.value)} className="select select-bordered w-full">
-            <option value="">-- wpisz ręcznie --</option>
-            {Object.entries(bankGroups).map(([bank, templates]) => (
-              <optgroup key={bank} label={bank}>
-                {templates.map(tpl => (
-                  <option key={tpl.id} value={tpl.id}>{tpl.label} | marża {tpl.margin}% | {tpl.wiborType}</option>
-                ))}
-              </optgroup>
-            ))}
-          </select>
-        </fieldset>
+        <button type="button" onClick={() => openSheetModule('templates')}
+          className="btn btn-outline w-full justify-between">
+          {templateInfo ? templateInfo.label : 'Wybierz szablon umowy'}
+          <span className="text-xs opacity-50">lub wpisz ręcznie</span>
+        </button>
 
-        {templateInfo && (
+        {templateInfo && bank && (
           <div className="alert alert-info text-sm">
             <div>
-              <p className="font-medium">{templateInfo.bank}</p>
+              <p className="font-medium">{bank.name}</p>
               <p className="text-xs mt-1">
                 {templateInfo.wiborType} + {templateInfo.margin}%
                 {templateInfo.bridgeMargin > 0 && ` + pomostowa ${templateInfo.bridgeMargin}%`}

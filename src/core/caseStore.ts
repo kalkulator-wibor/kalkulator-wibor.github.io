@@ -34,6 +34,13 @@ export function createNewCase(name: string): Case {
       bridgeEndDate: null,
       paymentDay: 30,
     },
+    templateId: null,
     wiborDatasetId: null,
+    lawsuit: {
+      plaintiff: { name: '', address: '', pesel: '' },
+      courtName: '',
+      demandDate: null,
+      evidenceChecklist: {},
+    },
   };
 }

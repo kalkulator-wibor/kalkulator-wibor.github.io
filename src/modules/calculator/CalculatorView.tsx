@@ -79,10 +79,13 @@ export default function CalculatorView() {
             <div className="py-8 px-2">
               <p className="label-caps mb-3">Wyrok TSUE</p>
               <h3 className="leading-snug">
-                C-471/24 z&nbsp;12.02.2026 — klauzule WIBOR&nbsp;+&nbsp;marża mogą być nieuczciwe
+                C-471/24 z&nbsp;12.02.2026 — klauzule WIBOR podlegają kontroli abuzywności
               </h3>
               <p className="mt-3 text-[0.8125rem] opacity-55 leading-relaxed max-w-lg">
-                Banki miały obowiązek przedstawić symulację skrajnego wzrostu stóp. Większość tego nie zrobiła — to otwiera drogę do pozwu.
+                TSUE potwierdził, że klauzule zmiennego oprocentowania z&nbsp;WIBOR mogą być badane pod kątem nieuczciwości (dyrektywa 93/13). Kluczowe jest, czy bank prawidłowo poinformował konsumenta o&nbsp;ryzyku zmiennej stopy — w&nbsp;tym czy dostarczył formularz ESIS z&nbsp;symulacją skrajnego wzrostu rat (dyrektywa 2014/17, umowy od&nbsp;2016&nbsp;r.).
+              </p>
+              <p className="mt-2 text-[0.75rem] opacity-40 leading-relaxed max-w-lg">
+                Każda umowa wymaga indywidualnej analizy. Sam wskaźnik WIBOR nie został zakwestionowany — ocenie podlega sposób jego zastosowania w&nbsp;umowie i&nbsp;realizacja obowiązków informacyjnych.
               </p>
             </div>
 

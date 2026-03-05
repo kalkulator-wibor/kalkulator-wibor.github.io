@@ -32,10 +32,18 @@ async function extractTextLayer(pdf: pdfjsLib.PDFDocumentProxy, pageNum: number)
 async function ocrPage(pdf: pdfjsLib.PDFDocumentProxy, pageNum: number): Promise<{ text: string; confidence: number }> {
   const page = await pdf.getPage(pageNum);
   const viewport = page.getViewport({ scale: 2.0 });
-  const canvas = new OffscreenCanvas(viewport.width, viewport.height);
+
+  // pdfjs v5 needs a real DOM canvas for rendering
+  const canvas = document.createElement('canvas');
+  canvas.width = viewport.width;
+  canvas.height = viewport.height;
   const ctx = canvas.getContext('2d')!;
-  await page.render({ canvasContext: ctx as unknown as CanvasRenderingContext2D, viewport, canvas } as any).promise;
-  const blob = await canvas.convertToBlob({ type: 'image/png' });
+
+  await page.render({ canvasContext: ctx, viewport } as any).promise;
+
+  const blob = await new Promise<Blob>((resolve, reject) => {
+    canvas.toBlob(b => b ? resolve(b) : reject(new Error('canvas toBlob failed')), 'image/png');
+  });
 
   const { data } = await Tesseract.recognize(blob, 'pol', {
     logger: () => {},

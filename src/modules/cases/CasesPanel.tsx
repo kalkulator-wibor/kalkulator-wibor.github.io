@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react';
 import { Pencil, Trash2, Upload, Eye, X } from 'lucide-react';
-import { useCases, useActiveCase, useLawsuitSummary, useResult, useTemplates, useCaseFiles, getBank } from '../../core/CaseContext';
+import { useCases, useActiveCase, useLawsuitSummary, useResult, useCaseFiles, useActiveBankInfo } from '../../core/CaseContext';
 import { openFile } from '../../core/fileStore';
 import { formatPLN } from '../../utils/formatters';
 import { EVIDENCE_ITEMS } from '../../core/types';
@@ -61,10 +61,8 @@ function LawsuitSection() {
 
   if (!activeCase || !result) return null;
 
-  const templates = useTemplates();
+  const bankInfo = useActiveBankInfo();
   const { lawsuit } = activeCase;
-  const tpl = activeCase.templateId ? templates.find(t => t.id === activeCase.templateId) : null;
-  const bank = tpl ? getBank(tpl.bankId) : null;
 
   const updatePlaintiff = (patch: Partial<PlaintiffData>) => {
     updateLawsuit({ plaintiff: { ...lawsuit.plaintiff, ...patch } });
@@ -95,16 +93,14 @@ function LawsuitSection() {
           className="input input-bordered input-sm w-full" placeholder="12345678901" maxLength={11} />
       </fieldset>
 
-      {bank && (
+      {bankInfo ? (
         <div className="bg-base-200 rounded-lg p-3 text-xs space-y-1">
           <p className="font-bold text-sm">Pozwany</p>
-          <p>{bank.legalName}</p>
-          <p><span className="opacity-50">KRS:</span> {bank.krs} <span className="opacity-50 ml-2">NIP:</span> {bank.nip}</p>
-          <p><span className="opacity-50">Adres:</span> {bank.address}</p>
+          <p>{bankInfo.bank.legalName}</p>
+          <p><span className="opacity-50">KRS:</span> {bankInfo.bank.krs} <span className="opacity-50 ml-2">NIP:</span> {bankInfo.bank.nip}</p>
+          <p><span className="opacity-50">Adres:</span> {bankInfo.bank.address}</p>
         </div>
-      )}
-
-      {!bank && (
+      ) : (
         <div className="alert alert-warning text-xs">
           Wybierz szablon umowy w formularzu, aby uzupełnić dane pozwanego banku.
         </div>

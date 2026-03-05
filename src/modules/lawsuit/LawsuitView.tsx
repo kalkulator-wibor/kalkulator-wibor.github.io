@@ -1,5 +1,5 @@
 import { Settings, FolderOpen, CheckCircle, Circle } from 'lucide-react';
-import { useCases, useActiveCase, useResult, useCaseFiles, useTemplates, getBank } from '../../core/CaseContext';
+import { useCases, useActiveCase, useResult, useCaseFiles, useActiveBankInfo } from '../../core/CaseContext';
 import { EVIDENCE_ITEMS } from '../../core/types';
 import { formatPLN } from '../../utils/formatters';
 
@@ -7,16 +7,14 @@ function CaseOverview() {
   const activeCase = useActiveCase()!;
   const result = useResult();
   const caseFiles = useCaseFiles();
-  const templates = useTemplates();
-  const tpl = activeCase.templateId ? templates.find(t => t.id === activeCase.templateId) : null;
-  const bank = tpl ? getBank(tpl.bankId) : null;
+  const bankInfo = useActiveBankInfo();
   const { lawsuit } = activeCase;
 
   const evidenceEntries = Object.entries(EVIDENCE_ITEMS);
   const uploadedCount = evidenceEntries.filter(([key]) => caseFiles.some(f => f.evidenceKey === key)).length;
 
   const hasPlaintiff = !!(lawsuit.plaintiff.name && lawsuit.plaintiff.pesel);
-  const hasBank = !!bank;
+  const hasBank = !!bankInfo;
   const hasCourt = !!lawsuit.courtName;
   const hasResult = !!result;
 
@@ -24,7 +22,7 @@ function CaseOverview() {
     <div className="space-y-6 max-w-2xl mx-auto">
       <div>
         <h2 className="text-xl font-bold">{activeCase.name}</h2>
-        {tpl && <p className="text-sm opacity-50 mt-1">{tpl.label}</p>}
+        {bankInfo && <p className="text-sm opacity-50 mt-1">{bankInfo.template.label}</p>}
       </div>
 
       {/* Gotowość */}
@@ -33,7 +31,7 @@ function CaseOverview() {
           <h3 className="font-bold text-sm opacity-60 uppercase tracking-wider mb-3">Stan sprawy</h3>
           <div className="space-y-2">
             <StatusRow done={hasResult} label="Obliczenia" detail={hasResult ? `Różnica: ${formatPLN(result!.overpaidInterest)}` : 'Wypełnij formularz i oblicz'} />
-            <StatusRow done={hasBank} label="Bank (strona)" detail={hasBank ? bank!.name : 'Wybierz szablon umowy'} />
+            <StatusRow done={hasBank} label="Bank (strona)" detail={hasBank ? bankInfo!.bank.name : 'Wybierz szablon umowy'} />
             <StatusRow done={hasPlaintiff} label="Dane powoda" detail={hasPlaintiff ? lawsuit.plaintiff.name : 'Uzupełnij w panelu Sprawy'} />
             <StatusRow done={hasCourt} label="Sąd właściwy" detail={hasCourt ? lawsuit.courtName : 'Uzupełnij w panelu Sprawy'} />
             <StatusRow done={uploadedCount === evidenceEntries.length} label="Dokumenty" detail={`${uploadedCount} z ${evidenceEntries.length} załączonych`} />
@@ -78,7 +76,7 @@ function StatusRow({ done, label, detail }: { done: boolean; label: string; deta
 }
 
 export default function LawsuitView() {
-  const { enabledAppModules, setActiveTab, cases, openSheetModule } = useCases();
+  const { enabledAppModules, setActiveTab, openSheetModule } = useCases();
   const activeCase = useActiveCase();
   const casesEnabled = enabledAppModules.includes('cases');
 
@@ -99,7 +97,7 @@ export default function LawsuitView() {
     );
   }
 
-  if (cases.length === 0 || !activeCase) {
+  if (!activeCase) {
     return (
       <div className="card bg-base-100 shadow-xl max-w-2xl mx-auto">
         <div className="card-body items-center text-center py-12">

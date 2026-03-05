@@ -1,11 +1,11 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import type { LoanInput } from '../utils/calculations';
 import { toDateString } from '../utils/formatters';
-import { useCases, useInput, useTemplates, getBank } from '../core/CaseContext';
+import { useCases, useInput, useActiveBankInfo } from '../core/CaseContext';
 
 export default function LoanForm() {
   const { updateInput, setActiveTab, openSheetModule, activeTemplateId } = useCases();
-  const templates = useTemplates();
+  const bankInfo = useActiveBankInfo();
   const savedInput = useInput();
   const [loanAmount, setLoanAmount] = useState(savedInput ? String(savedInput.loanAmount) : '200000');
   const [margin, setMargin] = useState(savedInput ? savedInput.margin.toFixed(2) : '2.09');
@@ -19,14 +19,11 @@ export default function LoanForm() {
   // Track previous templateId to detect external changes (sheet selection)
   const prevTemplateId = useRef(activeTemplateId);
 
-  const templateInfo = activeTemplateId ? templates.find(t => t.id === activeTemplateId) ?? null : null;
-  const bank = templateInfo ? getBank(templateInfo.bankId) : null;
-
   useEffect(() => {
     if (activeTemplateId === prevTemplateId.current) return;
     prevTemplateId.current = activeTemplateId;
-    const tpl = activeTemplateId ? templates.find(t => t.id === activeTemplateId) : null;
-    if (!tpl) return;
+    if (!bankInfo) return;
+    const tpl = bankInfo.template;
     setLoanAmount(tpl.loanAmount.toString());
     setMargin(tpl.margin.toFixed(2));
     setLoanPeriod(tpl.loanPeriodMonths.toString());
@@ -40,7 +37,7 @@ export default function LoanForm() {
       setBridgeMargin('0');
     }
     setStartDate('');
-  }, [activeTemplateId]);
+  }, [activeTemplateId, bankInfo]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -64,22 +61,22 @@ export default function LoanForm() {
 
         <button type="button" onClick={() => openSheetModule('templates')}
           className="btn btn-outline w-full justify-between">
-          {templateInfo ? templateInfo.label : 'Wybierz szablon umowy'}
+          {bankInfo ? bankInfo.template.label : 'Wybierz szablon umowy'}
           <span className="text-xs opacity-50">lub wpisz ręcznie</span>
         </button>
 
-        {templateInfo && bank && (
+        {bankInfo && (
           <div className="alert alert-info text-sm">
             <div>
-              <p className="font-medium">{bank.name}</p>
+              <p className="font-medium">{bankInfo.bank.name}</p>
               <p className="text-xs mt-1">
-                {templateInfo.wiborType} + {templateInfo.margin}%
-                {templateInfo.bridgeMargin > 0 && ` + pomostowa ${templateInfo.bridgeMargin}%`}
-                {templateInfo.commission > 0 && ` | prowizja ${templateInfo.commission}%`}
-                {' | '}{templateInfo.rateType === 'equal' ? 'raty równe' : 'raty malejące'}
-                {' | '}{templateInfo.interestMethod}
+                {bankInfo.template.wiborType} + {bankInfo.template.margin}%
+                {bankInfo.template.bridgeMargin > 0 && ` + pomostowa ${bankInfo.template.bridgeMargin}%`}
+                {bankInfo.template.commission > 0 && ` | prowizja ${bankInfo.template.commission}%`}
+                {' | '}{bankInfo.template.rateType === 'equal' ? 'raty równe' : 'raty malejące'}
+                {' | '}{bankInfo.template.interestMethod}
               </p>
-              <p className="text-xs mt-1 opacity-70">{templateInfo.notes}</p>
+              <p className="text-xs mt-1 opacity-70">{bankInfo.template.notes}</p>
               <p className="text-xs mt-1 italic opacity-60">Uzupełnij kwotę, datę uruchomienia i okres z konkretnej umowy.</p>
             </div>
           </div>

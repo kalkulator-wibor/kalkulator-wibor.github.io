@@ -14,6 +14,19 @@ import * as fileStore from './fileStore';
 
 const DEFAULT_APP_MODULES = ['calculator'];
 
+/** All fields that belong to the "active session" — reset together, always. */
+function emptySession() {
+  return {
+    activeCaseId: null as string | null,
+    activeInput: null as LoanInput | null,
+    activeTemplateId: null as string | null,
+    wiborData: getDefaultWiborEntries(),
+    wiborDatasetId: null as string | null,
+    caseFiles: [] as CaseFile[],
+    activeTab: 'summary',
+  };
+}
+
 function loadEnabledAppModules(): string[] {
   try {
     const stored = localStorage.getItem('enabledAppModules');
@@ -65,13 +78,12 @@ interface CaseStore {
 }
 
 async function doLoadCase(c: Case, datasets?: WiborDataset[]) {
-  const caseFiles = await fileStore.getFilesForCase(c.id);
-  const patch: Partial<CaseStore> = {
+  const session = {
+    ...emptySession(),
     activeCaseId: c.id,
     activeInput: toLoanInput(c.input),
-    activeTab: 'summary',
     activeTemplateId: c.templateId ?? null,
-    caseFiles,
+    caseFiles: await fileStore.getFilesForCase(c.id),
   };
 
   if (c.wiborDatasetId) {
@@ -79,11 +91,11 @@ async function doLoadCase(c: Case, datasets?: WiborDataset[]) {
       ? datasets.find(d => d.id === c.wiborDatasetId)
       : await wiborStore.getDataset(c.wiborDatasetId);
     if (ds) {
-      useCases.setState({ ...patch, wiborData: ds.entries, wiborDatasetId: ds.id });
-      return;
+      session.wiborData = ds.entries;
+      session.wiborDatasetId = ds.id;
     }
   }
-  useCases.setState({ ...patch, wiborData: getDefaultWiborEntries(), wiborDatasetId: null });
+  useCases.setState(session);
 }
 
 function updateCaseAndSave(id: string, patch: Partial<Case>) {
@@ -98,13 +110,8 @@ export const useCases = create<CaseStore>((set, get) => ({
   banks: [],
   templates: [],
   cases: [],
-  activeCaseId: null,
-  activeInput: null,
-  wiborData: getDefaultWiborEntries(),
-  wiborDatasetId: null,
-  activeTab: 'summary',
+  ...emptySession(),
   enabledAppModules: loadEnabledAppModules(),
-  caseFiles: [],
   openSheet: null,
   ready: false,
 
@@ -137,7 +144,7 @@ export const useCases = create<CaseStore>((set, get) => ({
   },
 
   newCase: () => {
-    set({ activeCaseId: null, activeInput: null, activeTemplateId: null, caseFiles: [] });
+    set(emptySession());
   },
 
   loadCase: async (id) => {
@@ -151,7 +158,7 @@ export const useCases = create<CaseStore>((set, get) => ({
     const { activeCaseId } = get();
     set(s => ({
       cases: s.cases.filter(c => c.id !== id),
-      ...(activeCaseId === id ? { activeCaseId: null, activeInput: null, activeTemplateId: null, wiborData: getDefaultWiborEntries(), wiborDatasetId: null, caseFiles: [] } : {}),
+      ...(activeCaseId === id ? emptySession() : {}),
     }));
   },
 
@@ -254,16 +261,20 @@ export function useTemplates(): LoanTemplate[] {
   return useCases(s => s.templates);
 }
 
-export function getBank(bankId: string): Bank | undefined {
-  return useCases.getState().banks.find(b => b.id === bankId);
-}
-
-export function getTemplate(templateId: string): LoanTemplate | undefined {
-  return useCases.getState().templates.find(t => t.id === templateId);
-}
-
 export function useCaseFiles(): CaseFile[] {
   return useCases(s => s.caseFiles);
+}
+
+export function useActiveBankInfo(): { template: LoanTemplate; bank: Bank } | null {
+  const templates = useTemplates();
+  const templateId = useCases(s => s.activeTemplateId);
+  return useMemo(() => {
+    if (!templateId) return null;
+    const template = templates.find(t => t.id === templateId);
+    if (!template) return null;
+    const bank = useCases.getState().banks.find(b => b.id === template.bankId);
+    return bank ? { template, bank } : null;
+  }, [templateId, templates]);
 }
 
 export function useWiborSource(): 'default' | 'custom' {

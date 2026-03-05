@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Pencil, Trash2, Upload, Eye, X, FileSearch } from 'lucide-react';
 import { useCases, useActiveCase, useLawsuitSummary, useResult, useCaseFiles, useActiveBankInfo } from '../../core/CaseContext';
 import { openFile, getFile } from '../../core/fileStore';
@@ -26,12 +26,11 @@ function EvidenceRow({ evidenceKey, label }: { evidenceKey: string; label: strin
   const isPdf = file?.mimeType === 'application/pdf';
   const canAnalyze = evidenceKey === 'contract' && isPdf;
 
-  // Check if text already extracted
-  useState(() => {
+  useEffect(() => {
     if (activeCaseId && file) {
       getDocumentText(activeCaseId, evidenceKey).then(dt => setHasText(!!dt));
     }
-  });
+  }, [activeCaseId, file, evidenceKey]);
 
   const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];

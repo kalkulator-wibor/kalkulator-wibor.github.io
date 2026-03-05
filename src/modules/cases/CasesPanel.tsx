@@ -110,10 +110,9 @@ function LawsuitSection() {
   const { updateLawsuit } = useCases();
   const summary = useLawsuitSummary();
   const result = useResult();
+  const bankInfo = useActiveBankInfo();
 
   if (!activeCase || !result) return null;
-
-  const bankInfo = useActiveBankInfo();
   const { lawsuit } = activeCase;
 
   const updatePlaintiff = (patch: Partial<PlaintiffData>) => {
